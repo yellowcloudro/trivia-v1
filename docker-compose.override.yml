@@ -1,0 +1,70 @@
+version: "3.6"
+
+# Development environment override
+services:
+  php:
+    container_name: trivia.php.app
+    networks:
+      - webnet
+    build:
+      target: php_dev
+    volumes:
+      - ./docker/data/php_socket:/var/run/php
+      - ./var:/app/var:rw
+      - ./:/app:rw,cached
+      - ./docker/php/conf.d/app.dev.ini:/usr/local/etc/php/conf.d/app.ini
+    environment:
+      APP_ENV: ${APP_ENV:-dev}
+      XDEBUG_MODE: debug
+      XDEBUG_CONFIG: >-
+        discover_client_host=true
+        idekey=PHPSTORM
+        log_level=0
+      # This should correspond to the server declared in PHPStorm `Preferences | Languages & Frameworks | PHP | Servers`
+      # Then PHPStorm will use the corresponding path mappings
+      PHP_IDE_CONFIG: serverName=app
+
+  caddy:
+    container_name: trivia.caddy.app
+    networks:
+      - webnet
+    volumes:
+      - ./docker/data/php_socket:/var/run/php
+      - ./docker/data/caddy/data:/data
+      - ./docker/data/caddy/config:/config
+      - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./public:/app/public:ro
+  db:
+    container_name: trivia.mysql.app
+    image: mysql:5.7
+    volumes:
+      - db_data:/var/lib/mysql
+    restart: always
+    networks:
+      - webnet
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpwd
+      MYSQL_DATABASE: app_01
+      MYSQL_USER: app
+      MYSQL_PASSWORD: apppwd
+    ports:
+      # MySQL TCP
+      - target: 3306
+        published: ${MYSQL_PORT:-3306}
+        protocol: tcp
+      # MySQL TCP
+      - target: 3306
+        published: ${MYSQL_PORT:-3306}
+        protocol: udp
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 26677
+        hard: 46677
+volumes:
+  db_data:
+networks:
+  default:
+    external: true
+    name: docker.trivia.app
+  webnet:

@@ -1,0 +1,37 @@
+{
+    # Debug
+    {$DEBUG}
+    # HTTP/3 support
+    servers {
+        protocol {
+            experimental_http3
+        }
+    }
+
+    log
+    auto_https disable_redirects
+}
+
+(app) {
+    route {
+        root * /app/public
+        push
+
+        # Disable Google FLOC tracking if not enabled explicitly: https://plausible.io/blog/google-floc
+        header ?Permissions-Policy "interest-cohort=()"
+
+        php_fastcgi php:9000
+        encode zstd gzip
+        file_server
+    }
+}
+
+{$SERVER_NAME} {
+    {$TLS_CONFIG}
+
+    import app
+}
+
+http://caddy.babymatters.app {
+    import app
+}

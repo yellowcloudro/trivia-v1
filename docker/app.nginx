@@ -1,0 +1,16 @@
+server {
+    listen  *:80;
+    root    "/app/public";
+    server_name babymatters.yellow;
+    index index.php index.html index.htm;
+
+     location / {
+            # try to serve file directly, fallback to index.php
+            try_files $uri /index.php$is_args$args;
+     }
+
+    # include the folder containing the vhost aliases for zend server deployment
+    include "${aliasdir}/*.conf";
+
+    include fastcgi-zend-server.conf;
+}
